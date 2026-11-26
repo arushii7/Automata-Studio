@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automata Studio</title>
+<style>
+:root{--bg:#F3F5F7;--dark:#26364A;--blue:#6B829B;--pale:#DCE6EF;--teal:#4C9A91;--ink:#263238;--white:#fff;--line:#d7dfe6;--muted:#718096;--red:#c65d62}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+button,input,select{font:inherit}button{border:1px solid var(--line);background:#fff;color:var(--dark);border-radius:7px;padding:7px 10px;cursor:pointer;transition:.15s}button:hover{border-color:var(--blue);background:#f7fafc}button:active{transform:translateY(1px)}button.primary{background:var(--dark);color:white;border-color:var(--dark)}button.teal{background:var(--teal);color:white;border-color:var(--teal)}button.danger{color:var(--red)}button:disabled{opacity:.4;cursor:not-allowed}
+.topbar{height:58px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 18px;position:relative;z-index:5}
+.brand{font-size:16px;font-weight:750;letter-spacing:-.3px;color:var(--dark);margin-right:8px}.brand span{color:var(--teal)}.top-spacer{flex:1}.topbar select{max-width:220px}
+select,input{border:1px solid var(--line);border-radius:7px;padding:7px 9px;background:#fff;color:var(--ink);outline:none}input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 2px #4c9a9120}
+.app{height:calc(100vh - 58px);display:grid;grid-template-columns:218px minmax(0,1fr) 300px;gap:10px;padding:10px;min-height:0}
+.sidebar,.sim-panel,.canvas-wrap{background:#fff;border:1px solid var(--line);border-radius:10px;min-height:0}
+.sidebar{padding:13px;overflow:auto}.section-title{font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:2px 0 9px}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.tool-grid button{font-size:12px;padding:9px 5px}.tool-grid button.active{background:var(--pale);border-color:var(--blue)}
+.tool-hint{font-size:11px;color:var(--muted);line-height:1.5;margin:9px 1px 15px;min-height:32px}
+hr{border:0;border-top:1px solid #edf0f3;margin:14px 0}
+.info-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;margin:7px 0;color:var(--muted)}.info-row strong{color:var(--dark);font-weight:650;text-align:right}
+.selection{font-size:12px;color:var(--muted);padding:9px;background:#f7f9fb;border:1px solid #edf0f3;border-radius:7px;min-height:45px}
+.center{display:flex;flex-direction:column;gap:9px;min-width:0;min-height:0}
+.canvas-toolbar{height:39px;display:flex;align-items:center;gap:7px;padding:0 4px}.canvas-toolbar .hint{font-size:11px;color:var(--muted);margin-left:5px}
+.canvas-wrap{position:relative;overflow:hidden;flex:1;min-height:240px;background-color:#fbfcfd;background-image:radial-gradient(#d9e1e8 1px,transparent 1px);background-size:20px 20px}
+svg#graph{width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
+.edge{fill:none;stroke:#71869a;stroke-width:1.8;transition:stroke .2s,stroke-width .2s}.edge.active{stroke:var(--teal);stroke-width:3.4;filter:drop-shadow(0 0 3px #4c9a9160)}.edge-label{font-size:13px;fill:var(--dark);font-weight:650;paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round;pointer-events:none}
+.state circle.outer{fill:#fff;stroke:var(--dark);stroke-width:2}.state circle.inner{fill:none;stroke:var(--dark);stroke-width:1.5}.state text{font-size:13px;fill:var(--dark);font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none}.state.selected circle.outer{stroke:var(--teal);stroke-width:3}.state.active circle.outer{fill:#d9eee9;stroke:var(--teal);stroke-width:3}.state.accepted circle.outer{fill:#d9eee9;stroke:var(--teal);stroke-width:3}.state.dead circle.outer{fill:#f9e4e4;stroke:var(--red)}
+.initial-arrow{stroke:var(--dark);stroke-width:1.8;fill:none}.empty-note{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#8492a1;pointer-events:none;font-size:13px}.empty-note strong{display:block;color:var(--dark);font-size:15px;margin-bottom:4px}
+.sim-panel{padding:14px;display:flex;flex-direction:column;gap:11px;overflow:auto}
+.panel-heading{font-size:14px;font-weight:750;color:var(--dark)}.field-label{font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:5px}
+.input-row{display:flex;gap:6px}.input-row input{min-width:0;flex:1;font-family:ui-monospace,monospace}
+.controls{display:flex;flex-wrap:wrap;gap:5px}.controls button{font-size:12px;padding:7px 9px}
+.speed-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}.speed-row input{flex:1;accent-color:var(--teal)}
+.result{border-radius:8px;padding:10px 11px;background:#f2f5f7;border:1px solid #e7edf1}.result.accept{background:#e9f4f1;border-color:#c5e1da}.result.reject{background:#fbefef;border-color:#efd1d1}.result strong{display:block;font-size:13px;letter-spacing:.3px}.result small{color:var(--muted)}
+.tape{display:flex;gap:4px;flex-wrap:wrap;min-height:31px}.tape span{min-width:25px;height:27px;border:1px solid var(--line);border-radius:5px;display:grid;place-items:center;font-family:ui-monospace,monospace;background:#fff}.tape span.current{background:var(--dark);color:#fff;border-color:var(--dark)}.tape span.done{background:#e8f1f0;border-color:#c9dfdb}
+.log{font-size:11px;color:var(--muted);line-height:1.6;overflow:auto;max-height:150px;border-top:1px solid #edf0f3;padding-top:7px}.log div{padding:2px 0}.log b{color:var(--dark)}
+.dialog-backdrop{position:fixed;inset:0;background:#17253666;display:none;place-items:center;z-index:20}.dialog{background:#fff;border-radius:11px;padding:18px;width:min(360px,calc(100vw - 30px));box-shadow:0 15px 50px #17253630}.dialog h3{margin:0 0 12px;color:var(--dark);font-size:16px}.dialog label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}.dialog input{width:100%}.dialog-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:16px}
+.statusbar{height:28px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted);padding:0 4px}
+@media(max-width:1000px){.app{grid-template-columns:185px minmax(0,1fr)}.sim-panel{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;overflow:auto;max-height:245px}.sim-panel .log{max-height:85px}}
+@media(max-width:650px){body{overflow:auto}.topbar{height:auto;min-height:58px;flex-wrap:wrap;padding:9px}.app{height:auto;min-height:calc(100vh - 58px);display:flex;flex-direction:column}.sidebar{order:2}.center{min-height:470px}.sim-panel{display:flex;max-height:none}.canvas-wrap{min-height:360px}.top-spacer{display:none}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">Automata <span>Studio</span></div>
+  <select id="machineType" aria-label="Automaton type"><option value="DFA">DFA</option><option value="NFA">NFA</option></select>
+  <button id="newBtn">New automaton</button><button id="clearBtn">Clear</button>
+  <div class="top-spacer"></div>
+  <select id="examples" aria-label="Load example"><option value="">Load example…</option><option value="ending">DFA · Ends in 01</option><option value="even">DFA · Even number of 0s</option><option value="substring">NFA · Contains 01</option><option value="branch">NFA · Multiple paths</option></select>
+</header>
+<main class="app">
+  <aside class="sidebar">
+    <div class="section-title">Editor tools</div>
+    <div class="tool-grid">
+      <button id="addState">＋ Add state</button><button id="addTransition">↗ Add transition</button>
+      <button id="setInitial">◎ Set initial</button><button id="toggleFinal">◎ Toggle final</button>
+      <button id="rename">✎ Rename</button><button id="delete" class="danger">⌫ Delete</button>
+    </div>
+    <div class="tool-hint" id="toolHint">Select a tool, then click the canvas or an element. Drag states to reposition them.</div>
+    <hr>
+    <div class="section-title">Selection</div><div class="selection" id="selection">Nothing selected</div>
+    <hr>
+    <div class="section-title">Automaton info</div>
+    <div class="info-row"><span>Type</span><strong id="infoType">DFA</strong></div>
+    <div class="info-row"><span>States</span><strong id="infoStates">0</strong></div>
+    <div class="info-row"><span>Transitions</span><strong id="infoEdges">0</strong></div>
+    <div class="info-row"><span>Initial state</span><strong id="infoInitial">Not set</strong></div>
+    <div class="info-row"><span>Accepting states</span><strong id="infoFinal">0</strong></div>
+    <hr>
+    <div class="section-title">Alphabet</div>
+    <div class="selection" id="alphabetInfo">Inferred from transition labels</div>
+  </aside>
+  <section class="center">
+    <div class="canvas-toolbar"><button id="fitBtn">Fit diagram</button><button id="zoomOut">−</button><button id="zoomIn">＋</button><span class="hint">Click empty space to add · drag states to move · scroll to zoom</span></div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <svg id="graph" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#71869a" stroke-width="1.2"/></marker><marker id="arrowActive" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#4C9A91" stroke-width="1.5"/></marker></defs>
+        <g id="world"><g id="edges"></g><g id="states"></g></g>
+      </svg>
+      <div class="empty-note" id="emptyNote"><div><strong>Your automaton workspace</strong>Choose “Add state” or load an example to begin.</div></div>
+    </div>
+    <div class="statusbar"><span id="statusText">Ready · No automaton loaded</span><span>Local session · No backend required</span></div>
+  </section>
+  <aside class="sim-panel">
+    <div>
+      <div class="panel-heading">String simulation</div>
+      <label class="field-label" for="inputString" style="margin-top:10px">INPUT STRING</label>
+      <div class="input-row"><input id="inputString" placeholder="e.g. 101" autocomplete="off"><button class="primary" id="playBtn">▶ Run</button></div>
+    </div>
+    <div>
+      <label class="field-label">PLAYBACK</label>
+      <div class="controls"><button id="prevBtn">← Step back</button><button id="stepBtn">Step →</button><button id="pauseBtn">Ⅱ Pause</button><button id="restartBtn">↺ Restart</button></div>
+      <div class="speed-row"><span>Slow</span><input id="speed" type="range" min="1" max="5" value="3"><span>Fast</span></div>
+    </div>
+    <div>
+      <label class="field-label">INPUT PROGRESS</label><div class="tape" id="tape"><span>∅</span></div>
+    </div>
+    <div class="result" id="result"><strong>Ready to simulate</strong><small>Enter a string and press Run or Step.</small></div>
+    <div><label class="field-label">CURRENT CONFIGURATION</label><div class="selection" id="configuration">No active computation</div></div>
+    <div class="log" id="log"><div>Build an automaton, then process an input string.</div></div>
+  </aside>
+</main>
+<div class="dialog-backdrop" id="dialogBackdrop"><div class="dialog"><h3 id="dialogTitle">Edit</h3><label id="dialogLabel" for="dialogInput">Value</label><input id="dialogInput" autocomplete="off"><div class="dialog-actions"><button id="dialogCancel">Cancel</button><button class="primary" id="dialogSave">Save</button></div></div></div>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const svgNS = 'http://www.w3.org/2000/svg';
+let states=[], transitions=[], initial=null, type='DFA', nextId=0, selected=null, tool='select';
+let sim=null, timer=null, zoom=1, pan={x:0,y:0}, drag=null, dialogAction=null, transitionSource=null;
+const graph=$('graph'), world=$('world'), edgeLayer=$('edges'), stateLayer=$('states');
+const symbolList = () => [...new Set(transitions.flatMap(t=>t.symbols))].sort();
+const stateById = id => states.find(s=>s.id===id);
+const setStatus = msg => $('statusText').textContent=msg;
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function addState(x=250+Math.random()*250,y=170+Math.random()*220,name){const id='q'+(++nextId);states.push({id,name:name||id,x,y,final:false});if(!initial)initial=id;selected={kind:'state',id};render();return id}
+function addTransition(from,to,symbols){const clean=[...new Set(symbols.split(',').map(s=>s.trim()).filter(Boolean))];if(!clean.length)return false;if(clean.some(s=>s.length!==1)){alert('Use one character per symbol. Separate multiple symbols with commas.');return false}if(type==='DFA'){for(const s of clean){if(transitions.some(t=>t.from===from&&t.symbols.includes(s)&&t.to!==to)){alert('A DFA can have only one destination for each state-symbol pair.');return false}}}let t=transitions.find(t=>t.from===from&&t.to===to);if(t)t.symbols=[...new Set([...t.symbols,...clean])];else transitions.push({id:'t'+(++nextId),from,to,symbols:clean});render();return true}
+function removeSelected(){if(!selected)return;if(selected.kind==='state'){const id=selected.id;states=states.filter(s=>s.id!==id);transitions=transitions.filter(t=>t.from!==id&&t.to!==id);if(initial===id)initial=states[0]?.id||null}else transitions=transitions.filter(t=>t.id!==selected.id);selected=null;stopPlayback();render()}
+function clearAutomaton(){states=[];transitions=[];initial=null;selected=null;nextId=0;stopPlayback();sim=null;render();resetDisplay();setStatus('Ready · Empty workspace')}
+function resetDisplay(){ $('tape').innerHTML='<span>∅</span>';$('result').className='result';$('result').innerHTML='<strong>Ready to simulate</strong><small>Enter a string and press Run or Step.</small>';$('configuration').textContent='No active computation';$('log').innerHTML='<div>Build an automaton, then process an input string.</div>'}
+function render(){renderEdges();renderStates();$('emptyNote').style.display=states.length?'none':'grid';$('infoType').textContent=type;$('infoStates').textContent=states.length;$('infoEdges').textContent=transitions.length;$('infoInitial').textContent=stateById(initial)?.name||'Not set';$('infoFinal').textContent=states.filter(s=>s.final).length;$('alphabetInfo').textContent=symbolList().join(', ')||'Inferred from transition labels';$('selection').textContent=selected?(selected.kind==='state'?'State: '+(stateById(selected.id)?.name||''):'Transition: '+(transitions.find(t=>t.id===selected.id)?.symbols.join(', ')||'')):'Nothing selected'}
+function svgEl(tag,attrs={},parent){const el=document.createElementNS(svgNS,tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));if(parent)parent.appendChild(el);return el}
+function edgePath(t){const a=stateById(t.from),b=stateById(t.to);if(!a||!b)return null;if(a.id===b.id){return {d:`M ${a.x-16} ${a.y-24} C ${a.x-78} ${a.y-100}, ${a.x+78} ${a.y-100}, ${a.x+16} ${a.y-24}`,lx:a.x,ly:a.y-88}}const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;const ux=dx/len,uy=dy/len;let curve=0;const reverse=transitions.find(o=>o.from===t.to&&o.to===t.from);if(reverse)curve=t.from<t.to?28:-28;const sx=a.x+ux*24,sy=a.y+uy*24,ex=b.x-ux*27,ey=b.y-uy*27,mx=(sx+ex)/2-uy*curve,my=(sy+ey)/2+ux*curve;return {d:`M ${sx} ${sy} Q ${mx} ${my} ${ex} ${ey}`,lx:.25*sx+.5*mx+.25*ex,ly:.25*sy+.5*my+.25*ey-8}}
+function renderEdges(){edgeLayer.innerHTML='';transitions.forEach(t=>{const p=edgePath(t);if(!p)return;const active=sim?.activeEdges?.includes(t.id);const path=svgEl('path',{d:p.d,class:'edge'+(active?' active':''), 'marker-end':active?'url(#arrowActive)':'url(#arrow)'},edgeLayer);path.addEventListener('click',e=>{e.stopPropagation();selected={kind:'transition',id:t.id};render()});path.style.cursor='pointer';const label=svgEl('text',{x:p.lx,y:p.ly,class:'edge-label','text-anchor':'middle'},edgeLayer);label.textContent=t.symbols.join(',');label.addEventListener('click',e=>{e.stopPropagation();selected={kind:'transition',id:t.id};render()})})}
+function renderStates(){stateLayer.innerHTML='';states.forEach(s=>{const active=sim?.active?.includes(s.id),accepted=sim?.finished&&s.final&&active,dead=sim?.finished&&!active;const g=svgEl('g',{class:'state'+(selected?.kind==='state'&&selected.id===s.id?' selected':'')+(active?' active':'')+(accepted?' accepted':'')+(dead&&sim?.finished?'':''),transform:`translate(${s.x},${s.y})`,'data-id':s.id},stateLayer);svgEl('circle',{class:'outer',r:23},g);if(s.final)svgEl('circle',{class:'inner',r:17},g);const text=svgEl('text',{y:1},g);text.textContent=s.name;g.addEventListener('pointerdown',e=>onStateDown(e,s));g.addEventListener('click',e=>{e.stopPropagation();onStateClick(s)});if(s.id===initial){svgEl('path',{d:'M -62 0 L -26 0','class':'initial-arrow','marker-end':'url(#arrow)'},g)}})}
+function onStateClick(s){if(tool==='initial'){initial=s.id;tool='select';updateToolHint();render();return}if(tool==='final'){s.final=!s.final;tool='select';updateToolHint();render();return}if(tool==='transition'){if(!transitionSource){transitionSource=s.id;selected={kind:'state',id:s.id};$('toolHint').textContent='Now click the destination state.';render()}else{const from=transitionSource,to=s.id;transitionSource=null;tool='select';updateToolHint();openDialog('New transition','Symbols (comma-separated)','0,1',value=>addTransition(from,to,value));}return}selected={kind:'state',id:s.id};render()}
+function onStateDown(e,s){if(tool!=='select')return;e.preventDefault();e.stopPropagation();selected={kind:'state',id:s.id};drag={id:s.id,startX:e.clientX,startY:e.clientY,origX:s.x,origY:s.y,moved:false};graph.setPointerCapture(e.pointerId);render()}
+function pointerToWorld(e){const p=graph.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const m=world.getScreenCTM().inverse();return p.matrixTransform(m)}
+graph.addEventListener('pointermove',e=>{if(!drag)return;const p=pointerToWorld(e),s=stateById(drag.id);if(s){s.x=p.x;s.y=p.y;drag.moved=true;renderEdges();renderStates()}});
+graph.addEventListener('pointerup',()=>{drag=null});
+graph.addEventListener('click',e=>{if(e.target.closest('.state')||e.target.closest('.edge')||e.target.closest('.edge-label'))return;const p=pointerToWorld(e);if(tool==='add'){addState(p.x,p.y);tool='select';updateToolHint()}else{selected=null;render()}});
+graph.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.45,Math.min(2.2,zoom*(e.deltaY<0?1.08:.92)));applyView()},{passive:false});
+function applyView(){world.setAttribute('transform',`translate(${pan.x} ${pan.y}) scale(${zoom})`)}
+function updateToolHint(){const hints={select:'Select elements. Drag a state to reposition it.',add:'Click the canvas to place a new state.',transition:'Click a source state, then a destination state.',initial:'Click the state that should be initial.',final:'Click a state to toggle accepting status.'};$('toolHint').textContent=hints[tool]||hints.select;document.querySelectorAll('.tool-grid button').forEach(b=>b.classList.remove('active'))}
+function chooseTool(t){tool=t;transitionSource=null;updateToolHint();const ids={add:'addState',transition:'addTransition',initial:'setInitial',final:'toggleFinal'};if(ids[t])$(ids[t]).classList.add('active')}
+function openDialog(title,label,value,callback){$('dialogTitle').textContent=title;$('dialogLabel').textContent=label;$('dialogInput').value=value;$('dialogBackdrop').style.display='grid';dialogAction=callback;$('dialogInput').focus();$('dialogInput').select()}
+function closeDialog(){$('dialogBackdrop').style.display='none';dialogAction=null}
+$('dialogCancel').onclick=closeDialog;$('dialogSave').onclick=()=>{const v=$('dialogInput').value.trim();if(v&&dialogAction)dialogAction(v);closeDialog()};$('dialogInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('dialogSave').click();if(e.key==='Escape')closeDialog()});
+$('addState').onclick=()=>chooseTool('add');$('addTransition').onclick=()=>chooseTool('transition');$('setInitial').onclick=()=>chooseTool('initial');$('toggleFinal').onclick=()=>chooseTool('final');
+$('rename').onclick=()=>{if(selected?.kind==='state'){const s=stateById(selected.id);openDialog('Rename state','State name',s.name,v=>{s.name=v;render()})}else if(selected?.kind==='transition'){const t=transitions.find(t=>t.id===selected.id);openDialog('Edit transition','Symbols (comma-separated)',t.symbols.join(','),v=>{const old=t.symbols;t.symbols=[];const clean=[...new Set(v.split(',').map(x=>x.trim()).filter(Boolean))];if(!clean.length||clean.some(x=>x.length!==1)){t.symbols=old;alert('Use one character per symbol.');return}if(type==='DFA'&&clean.some(sym=>transitions.some(o=>o!==t&&o.from===t.from&&o.symbols.includes(sym)))){t.symbols=old;alert('This would make the DFA nondeterministic.');return}t.symbols=clean;render()})}else alert('Select a state or transition first.')};
+$('delete').onclick=removeSelected;$('clearBtn').onclick=clearAutomaton;$('newBtn').onclick=()=>{clearAutomaton();addState(300,280,'q0');render()};
+$('machineType').onchange=e=>{const old=type;type=e.target.value;if(type==='DFA'){const seen=new Set();let conflict=false;transitions.forEach(t=>t.symbols.forEach(s=>{const k=t.from+'|'+s;if(seen.has(k))conflict=true;seen.add(k)}));if(conflict){alert('Existing transitions are nondeterministic. They remain, but the DFA simulator will report a definition error.');}}stopPlayback();sim=null;render();resetDisplay()};
+$('fitBtn').onclick=()=>{if(!states.length){zoom=1;pan={x:0,y:0};applyView();return}const xs=states.map(s=>s.x),ys=states.map(s=>s.y),minX=Math.min(...xs)-80,maxX=Math.max(...xs)+80,minY=Math.min(...ys)-80,maxY=Math.max(...ys)+80;const w=graph.clientWidth,h=graph.clientHeight;zoom=Math.min(2.1,Math.max(.45,Math.min(w/(maxX-minX),h/(maxY-minY))));pan={x:(w/2-(minX+maxX)/2*zoom),y:(h/2-(minY+maxY)/2*zoom)};applyView()};
+$('zoomIn').onclick=()=>{zoom=Math.min(2.2,zoom*1.15);applyView()};$('zoomOut').onclick=()=>{zoom=Math.max(.45,zoom/1.15);applyView()};
+function validate(input){if(!states.length)return 'Add at least one state.';if(!initial||!stateById(initial))return 'Select an initial state.';const alphabet=symbolList();for(const c of input)if(!alphabet.includes(c))return `Invalid symbol “${c}”. Alphabet: ${alphabet.join(', ')||'(empty)'}.`;if(type==='DFA'){const seen=new Set();for(const t of transitions)for(const s of t.symbols){const k=t.from+'|'+s;if(seen.has(k))return `Invalid DFA: more than one transition from ${stateById(t.from)?.name} on “${s}”.`;seen.add(k)}for(const st of states)for(const s of alphabet)if(!transitions.some(t=>t.from===st.id&&t.symbols.includes(s)))return `Incomplete DFA: ${st.name} has no transition for “${s}”.`; }return null}
+function nextConfig(active,symbol){const next=new Set(),edges=[];for(const id of active)for(const t of transitions)if(t.from===id&&t.symbols.includes(symbol)){next.add(t.to);edges.push(t.id)}return {active:[...next],edges}}
+function buildSimulation(input){const err=validate(input);if(err)return {error:err};const frames=[{index:0,active:[initial],edges:[],description:`Start in ${stateById(initial).name}`}];let active=[initial];for(let i=0;i<input.length;i++){const result=nextConfig(active,input[i]);active=result.active;frames.push({index:i+1,active:[...active],edges:result.edges,description:`Read “${input[i]}” → ${active.length?active.map(id=>stateById(id).name).join(', '):'no active states'}`})}const accepted=active.some(id=>stateById(id)?.final);return {input,frames,accepted,finalActive:active}}
+function beginSimulation(){stopPlayback();const input=$('inputString').value;const built=buildSimulation(input);if(built.error){$('result').className='result reject';$('result').innerHTML='<strong>Cannot simulate</strong><small>'+esc(built.error)+'</small>';return false}sim={...built,step:0,active:built.frames[0].active,activeEdges:[],finished:false};renderFrame();return true}
+function renderFrame(){if(!sim)return;const f=sim.frames[sim.step];sim.active=f.active;sim.activeEdges=f.edges;sim.finished=sim.step===sim.frames.length-1;render();const chars=[...sim.input];$('tape').innerHTML=chars.length?chars.map((c,i)=>`<span class="${i<sim.step?'done':''} ${i===sim.step?'current':''}">${esc(c)}</span>`).join(''):'<span class="current">ε</span>';$('configuration').textContent=`{ ${sim.active.map(id=>stateById(id)?.name).filter(Boolean).join(', ')||'∅'} } · ${sim.step}/${chars.length} symbols processed`;$('log').innerHTML=sim.frames.slice(0,sim.step+1).map((fr,i)=>`<div><b>${i===0?'Start':`Step ${i}`}:</b> ${esc(fr.description)}</div>`).join('');if(sim.finished){$('result').className='result '+(sim.accepted?'accept':'reject');$('result').innerHTML=`<strong>${sim.accepted?'✓ ACCEPTED':'✕ REJECTED'}</strong><small>${sim.accepted?'At least one computation ends in an accepting state.':'No computation ends in an accepting state.'}</small>`;setStatus(`Finished · ${sim.accepted?'Accepted':'Rejected'}`)}else{$('result').className='result';$('result').innerHTML=`<strong>Processing · ${sim.step} of ${chars.length}</strong><small>${f.description}</small>`;setStatus(`Processing · Step ${sim.step}/${chars.length}`)}}
+function stepForward(){if(!sim&&!beginSimulation())return;if(sim.step<sim.frames.length-1){sim.step++;renderFrame()}else renderFrame()}
+function stepBack(){if(!sim)return;stopPlayback();if(sim.step>0){sim.step--;renderFrame()}}
+function stopPlayback(){if(timer){clearInterval(timer);timer=null}}
+function play(){if(!sim&&!beginSimulation())return;if(sim.step>=sim.frames.length-1){sim.step=0;renderFrame()}stopPlayback();const delay=[1400,950,650,400,220][+$('speed').value-1];timer=setInterval(()=>{if(!sim||sim.step>=sim.frames.length-1){stopPlayback();return}sim.step++;renderFrame()},delay)}
+$('playBtn').onclick=play;$('stepBtn').onclick=stepForward;$('prevBtn').onclick=stepBack;$('pauseBtn').onclick=()=>{stopPlayback();setStatus('Paused')};$('restartBtn').onclick=()=>{stopPlayback();if(sim){sim.step=0;renderFrame()}else resetDisplay()};
+function loadExample(key){clearAutomaton();type=key==='ending'||key==='even'?'DFA':'NFA';$('machineType').value=type;const add=(id,name,x,y,final=false)=>{states.push({id,name,x,y,final});nextId++};const edge=(from,to,...symbols)=>transitions.push({id:'t'+(++nextId),from,to,symbols});if(key==='ending'){add('q0','q0',170,280);add('q1','q1',390,160);add('q2','q2',610,280,true);initial='q0';edge('q0','q1','0');edge('q0','q0','1');edge('q1','q1','0');edge('q1','q2','1');edge('q2','q1','0');edge('q2','q0','1');}
+if(key==='even'){add('q0','even',280,270,true);add('q1','odd',540,270);initial='q0';edge('q0','q1','0');edge('q1','q0','0');edge('q0','q0','1');edge('q1','q1','1');}
+if(key==='substring'){add('q0','q0',170,280);add('q1','q1',410,150);add('q2','q2',650,280,true);initial='q0';edge('q0','q0','0','1');edge('q0','q1','0');edge('q1','q2','1');edge('q2','q2','0','1');}
+if(key==='branch'){add('q0','q0',170,280);add('q1','q1',420,150);add('q2','q2',420,410);add('q3','q3',680,280,true);initial='q0';edge('q0','q1','a','b');edge('q0','q2','a');edge('q1','q3','b');edge('q2','q3','a','b');edge('q3','q3','a','b');}
+selected=null;render();$('inputString').value=key==='ending'?'1101':key==='even'?'1010':key==='substring'?'1101':'ab';resetDisplay();$('fitBtn').click();setStatus('Example loaded · '+$('examples').selectedOptions[0].textContent)}
+$('examples').onchange=e=>{if(e.target.value)loadExample(e.target.value);e.target.value=''};
+$('inputString').addEventListener('keydown',e=>{if(e.key==='Enter')play()});
+document.addEventListener('keydown',e=>{if(e.key==='Delete'&&document.activeElement.tagName!=='INPUT')removeSelected();if(e.key==='Escape'){chooseTool('select');closeDialog()}});
+clearAutomaton();
+})();
+</script>
+</body>
+</html>
